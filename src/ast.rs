@@ -55,7 +55,7 @@ impl TEnv {
                 if var == v {
                     Some(typ.clone())
                 } else {
-                    None
+                    prev.search(var)
                 }
             }
         }
@@ -68,7 +68,7 @@ impl Exp {
     pub fn type_inference(&self,env: &TEnv) -> Type {
         let (res,typ) = self.extract(env);
         let type_assign = unify(res);
-        typ.assign(type_assign)
+        typ.assign(&type_assign)
     }
 
     // パフォーマンスのことはなにも考えていない実装
@@ -95,7 +95,7 @@ impl Exp {
             }
             Exp::Func(x,box exp) => {
                 // globalにuniqueなtypeVarを出力する実装を考える!!
-                let new_type_var = Type::TypeVar("1".to_string());
+                let new_type_var = Type::TypeVar(x.to_string());
                 let new_env = TEnv::Env(
                     box env.clone(),
                     x.clone(),
@@ -110,11 +110,11 @@ impl Exp {
 }
 
 impl Type {
-    fn assign(&self,assign: TypeAssign) -> Type {
+    fn assign(&self,assign: &TypeAssign) -> Type {
         match self {
             Type::Func(box Type::TypeVar(v),box typ) => {
                 match assign.get(v) {
-                    Some(t) => Type::Func(box t.clone(),box typ.clone()),
+                    Some(t) => Type::Func(box t.clone(),box typ.assign(assign)),
                     _ => panic!()
                 }
             }   

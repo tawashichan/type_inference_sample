@@ -9,8 +9,23 @@ fn main() {
         "x".to_string(),
         box Exp::Op(
             Op::ADD,
-            box Exp::Var("x".to_string()),
             box Exp::Int(1),
+            box Exp::Var("x".to_string()),
+        )
+    );
+     let ast = Exp::Func(
+        "x".to_string(),
+        box Exp::Func(
+            "y".to_string(),
+            box Exp::Op(
+                Op::ADD,
+                box Exp::Op(
+                    Op::ADD,
+                    box Exp::Var("x".to_string()),
+                    box Exp::Int(1),
+                ),
+                box Exp::Var("y".to_string()),
+            )
         )
     );
     let result = ast.type_inference(&TEnv::None);
