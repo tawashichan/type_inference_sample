@@ -1,8 +1,8 @@
-#![feature(box_patterns,box_syntax)]
+#![feature(box_patterns,box_syntax,slice_patterns)]
 
 mod ast;
 
-use ast::{Exp,Op,TEnv};
+use ast::{Exp,Op,TEnv,unify};
 
 fn main() {
     let ast = Exp::Func(
@@ -13,6 +13,7 @@ fn main() {
             box Exp::Int(1),
         )
     );
-    let (r,typ) = ast.extract(&TEnv::None);
-    println!("{:?} {:?}",r,typ);
+    let result = ast.type_inference(&TEnv::None);
+    println!("{:?}",result);
+
 }

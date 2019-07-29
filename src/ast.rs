@@ -1,4 +1,4 @@
-use std::collections::{HashSet};
+use std::collections::{HashSet,HashMap};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Exp {
@@ -22,7 +22,7 @@ pub struct Let(Var, Box<Exp>, Box<Exp>);
 
 #[derive(Debug,PartialEq,Eq,Hash,Clone)]
 pub enum Type {
-    TypeVar(Var),
+    TypeVar(TypeVarName),
     Int,
     Bool,
     Func(Box<Type>, Box<Type>),
@@ -31,8 +31,9 @@ pub enum Type {
 
 pub type Var = String;
 
-#[derive(Debug,PartialEq,Eq,Hash,Clone)]
-pub struct Assign(Var,Type);
+pub type TypeVarName = String;
+
+pub type TypeAssign = HashMap<TypeVarName,Type>;
 
 #[derive(Debug,PartialEq,Eq,Hash,Clone)]
 pub struct TypeEquation(Type,Type);
@@ -42,7 +43,7 @@ pub type Restrictions = HashSet<TypeEquation>;
 #[derive(Debug,Clone, PartialEq)]
 pub enum TEnv {
     None,
-    Env(Box<TEnv>, Var,Type),
+    Env(Box<TEnv>,Var,Type),
 }
 
 impl TEnv {
@@ -63,6 +64,13 @@ impl TEnv {
 }
 
 impl Exp {
+
+    pub fn type_inference(&self,env: &TEnv) -> Type {
+        let (res,typ) = self.extract(env);
+        let type_assign = unify(res);
+        typ.assign(type_assign)
+    }
+
     // パフォーマンスのことはなにも考えていない実装
     // ライフタイムパズルをしたいわけではないので、参照を使うのはあとまわし
     pub fn extract(&self,env: &TEnv) -> (Restrictions,Type) {
@@ -101,6 +109,52 @@ impl Exp {
     }
 }
 
-pub fn unify(res: Restrictions,typ: Type) {
-    
+impl Type {
+    fn assign(&self,assign: TypeAssign) -> Type {
+        match self {
+            Type::Func(box Type::TypeVar(v),box typ) => {
+                match assign.get(v) {
+                    Some(t) => Type::Func(box t.clone(),box typ.clone()),
+                    _ => panic!()
+                }
+            }   
+            _ => self.clone()
+        }
+    } 
+}
+
+fn assign(typ_var_name: &TypeVarName,typ: &Type,res: &[TypeEquation]) -> Vec<TypeEquation> {
+    res.iter().map(|a| 
+        match a {
+            TypeEquation(Type::TypeVar(v_n),t) if typ_var_name == v_n => {
+                TypeEquation(typ.clone(),t.clone())
+            }
+            TypeEquation(t,Type::TypeVar(v_n)) if typ_var_name == v_n => {
+                TypeEquation(typ.clone(),t.clone())
+            }
+            _ => a.clone()
+        }
+    ).collect()
+}
+
+pub fn unify(res: Restrictions) -> TypeAssign {
+    let res: Vec<TypeEquation> = res.into_iter().collect();
+    unify_sub(&res)
+}
+
+fn unify_sub(res: &[TypeEquation]) -> TypeAssign {
+    match res {
+        [] => TypeAssign::new(),
+        [TypeEquation(t1,t2),rest..] if t1 == t2 => unify_sub(rest),
+        [TypeEquation(Type::Func(box f1_a,box f1_b),Type::Func(box f2_a,box f2_b)),rest..] => {
+            let res: Vec<TypeEquation> = res.iter().cloned().chain(vec![TypeEquation(f1_a.clone(),f2_a.clone()),TypeEquation(f1_b.clone(),f2_b.clone())]).collect();
+            unify_sub(&res)
+        },
+        [TypeEquation(Type::TypeVar(v),typ),rest..] | [TypeEquation(typ,Type::TypeVar(v)),rest..] => {
+            let mut s = unify_sub(&assign(v,typ,rest));
+            s.insert(v.clone(),typ.clone());
+            s
+        }
+        _ => panic!("{:?}",res)
+    }
 }
