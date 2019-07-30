@@ -13,7 +13,7 @@ fn main() {
             box Exp::Var("x".to_string()),
         )
     );
-     let ast = Exp::Func(
+    let ast = Exp::Func(
         "x".to_string(),
         box Exp::Func(
             "y".to_string(),
@@ -26,6 +26,25 @@ fn main() {
                 ),
                 box Exp::Var("y".to_string()),
             )
+        )
+    );
+    let ast = Exp::Func(
+        "x".to_string(),
+        box Exp::Func(
+            "y".to_string(),
+            box Exp::Op(
+                Op::ADD,
+                box Exp::Var("x".to_string()),
+                box Exp::Var("y".to_string()),
+            )
+        )
+    );
+    let ast = Exp::Func(
+        "x".to_string(),
+        box Exp::If(
+            box Exp::Var("x".to_string()),
+            box Exp::Int(1),
+            box Exp::Int(2),
         )
     );
     let result = ast.type_inference(&TEnv::None);

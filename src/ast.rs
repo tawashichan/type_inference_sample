@@ -93,6 +93,23 @@ impl Exp {
                     _ => (e3_r,Type::Bool)
                 }
             }
+            Exp::If(box cond,box then,box els) => {
+                let (cond_r,cond_typ) = cond.extract(env);
+                let (then_r,then_typ) = then.extract(env);
+                let (els_r,els_typ) = els.extract(env);
+                let r1 = merge_restrictions(cond_r,then_r);
+                let r2 = merge_restrictions(els_r,vec![TypeEquation(cond_typ,Type::Bool),TypeEquation(then_typ.clone(),els_typ)].into_iter().collect());
+                let r4 = merge_restrictions(r1, r2);
+                (r4,then_typ)
+            },
+            Exp::App(box e1,box e2) => {
+                let new_type_var = Type::TypeVar("aaa".to_string());
+                let (e1_r,e1_typ) = e1.extract(env);
+                let (e2_r,e2_typ) = e2.extract(env);
+                let r1 = merge_restrictions(e1_r, e2_r);
+                let r2 = merge_restrictions(r1,vec![TypeEquation(e1_typ,Type::Func(box e2_typ,box new_type_var.clone()))].into_iter().collect()); 
+                (r2,new_type_var)
+            },
             Exp::Func(x,box exp) => {
                 // globalにuniqueなtypeVarを出力する実装を考える!!
                 let new_type_var = Type::TypeVar(x.to_string());
@@ -121,6 +138,10 @@ impl Type {
             _ => self.clone()
         }
     } 
+}
+
+fn merge_restrictions(r1: Restrictions,r2: Restrictions) -> Restrictions {
+    r1.into_iter().chain(r2).collect()
 }
 
 fn assign(typ_var_name: &TypeVarName,typ: &Type,res: &[TypeEquation]) -> Vec<TypeEquation> {
