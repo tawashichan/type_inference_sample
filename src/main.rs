@@ -47,6 +47,17 @@ fn main() {
             box Exp::Int(2),
         )
     );
+    let ast = Exp::LetRec(
+        "x".to_string(),
+        "y".to_string(),
+        box Exp::If(
+            box Exp::Bool(true),
+            box Exp::App(box Exp::Var("x".to_string()),box Exp::Int(1)),
+            box Exp::Int(1),
+        ),
+        box Exp::App(box Exp::Var("x".to_string()),box Exp::Int(1)),
+    );
+    println!("{:?}",ast);
     let result = ast.type_inference(&TEnv::None);
     println!("{:?}",result);
 

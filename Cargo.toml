@@ -5,3 +5,4 @@ authors = ["irieryota <ryotairie123@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+nanoid = "0.1.3"
