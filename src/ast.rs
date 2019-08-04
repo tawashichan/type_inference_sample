@@ -16,7 +16,10 @@ pub enum Exp {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Op {
-    ADD,
+    Plus,
+    Minus,
+    Lt,
+    Equal
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -92,7 +95,8 @@ impl Exp {
                 let e3_r = merge_restrictions(e3_r,op_equation);
                
                 match op {
-                    Op::ADD => (e3_r,Type::Int),
+                    Op::Plus => (e3_r,Type::Int),
+                    Op::Minus => (e3_r,Type::Int),
                     _ => (e3_r,Type::Bool)
                 }
             }
